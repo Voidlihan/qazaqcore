@@ -8,7 +8,7 @@ interface Message {
 }
 
 // Вставь сюда свой сгенерированный токен Hugging Face (начинается на hf_...)
-const HF_API_KEY = "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";
+const HF_API_KEY = import.meta.env.VITE_HF_API_KEY || "";
 
 export const QC1Assistant: React.FC = () => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
