@@ -24,25 +24,33 @@ export const handler = async (event) => {
       2. If asked about places in Astana, suggest: Baiterek, Hazret Sultan Mosque, or Khan Shatyr.
     `;
 
-    // Формируем историю для Hugging Face
     const fullMessages = [
       { role: 'system', content: systemPrompt },
       ...messages
     ];
 
-    // Делаем запрос к бесплатному серверу Hugging Face (используем мощнейшую Qwen 2.5 72B)
-    const response = await fetch('https://api-inference.huggingface.co/models/Qwen/Qwen2.5-72B-Instruct/v1/chat/completions', {
+    // Используем выделенный отказоустойчивый роутер Hugging Face
+    const response = await fetch('https://router.huggingface.co/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey.trim()}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'Qwen/Qwen2.5-72B-Instruct',
+        // Добавляем флаг :auto, чтобы система сама выбрала живой сервер для Qwen
+        model: 'Qwen/Qwen2.5-72B-Instruct:auto', 
         messages: fullMessages,
         max_tokens: 500,
       }),
     });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      return {
+        statusCode: response.status,
+        body: JSON.stringify({ error: `Hugging Face API error: ${errorText}` }),
+      };
+    }
 
     const data = await response.json();
 
