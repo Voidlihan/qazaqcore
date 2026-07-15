@@ -45,7 +45,7 @@ export default function App() {
         </div>
 
         {/* ОСНОВНОЙ КОНТЕНТ */}
-        <main className="flex-grow max-w-4xl w-full px-6 py-12 z-10 mx-auto xl:mx-44">
+        <main className="flex-grow max-w-4xl w-full px-4 md:px-6 py-8 md:py-12 z-10 mx-auto">
           {currentTab === 'slang' && (
             <div>
               <div className="text-center mb-12">
