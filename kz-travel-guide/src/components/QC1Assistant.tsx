@@ -69,7 +69,7 @@ export const QC1Assistant: React.FC = () => {
           'accept': 'application/json',
         },
         body: JSON.stringify({
-          model: 'command-r', // Топовая модель от Cohere
+          model: 'command-light', // Топовая модель от Cohere
           message: text,
           preamble: systemPrompt, // Системный промпт в Cohere задается здесь
           chat_history: chatHistory,
