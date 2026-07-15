@@ -25,7 +25,7 @@ export const handler = async (event) => {
         'X-Title': 'Qazaq Core'
       },
       body: JSON.stringify({
-        model: 'meta-llama/llama-3.1-8b-instruct:free', // Задаем стабильную модель
+        model: 'meta-llama/llama-3.1-8b-instruct', // Задаем стабильную модель
         messages: messages
       }),
     });
