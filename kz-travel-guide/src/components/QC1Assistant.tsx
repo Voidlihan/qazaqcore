@@ -7,6 +7,9 @@ interface Message {
   sender: 'bot' | 'user';
 }
 
+// Вставь сюда свой сгенерированный токен Hugging Face (начинается на hf_...)
+const HF_API_KEY = "hf_ВАШ_ТОКЕН_СЮДА";
+
 export const QC1Assistant: React.FC = () => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [messages, setMessages] = useState<Message[]>([
@@ -36,56 +39,75 @@ export const QC1Assistant: React.FC = () => {
     const text = inputValue.trim();
     if (!text || isLoading) return;
 
-    // Добавляем сообщение пользователя на экран
+    // 1. Добавляем сообщение пользователя на экран
     const userMessageId = Date.now().toString();
-    setMessages((prev) => [...prev, { id: userMessageId, text, sender: 'user' }]);
+    const updatedMessages: Message[] = [...messages, { id: userMessageId, text, sender: 'user' }];
+    setMessages(updatedMessages);
     setInputValue('');
     setIsLoading(true);
 
     try {
-      // Запрос к нашей Netlify Function (или Next.js API route)
-      const response = await fetch('/.netlify/functions/chat', {
+      // 2. Системные инструкции (личность бота)
+      const systemPrompt = `
+        You are QC1, an AI assistant for the Qazaq Core project (interactive guide to Astana).
+        Creator: Alihan, developer and content creator.
+        Tone: Friendly, helpful, brief, and polite.
+        Instructions:
+        1. Detect the user's language and respond in the same language (Kazakh, English, or Russian).
+        2. If asked about places in Astana, suggest: Baiterek, Hazret Sultan Mosque, or Khan Shatyr.
+      `;
+
+      // 3. Формируем историю диалога для ИИ из текущих сообщений в стейте
+      const apiMessages = [
+        { role: 'system', content: systemPrompt },
+        ...updatedMessages.map(msg => ({
+          role: msg.sender === 'user' ? 'user' : 'assistant',
+          content: msg.text
+        }))
+      ];
+
+      // 4. Запрос напрямую к Hugging Face (без использования Netlify Functions и DNS-проблем на бэкенде)
+      const response = await fetch('https://api-inference.huggingface.co/v1/chat/completions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Authorization': `Bearer ${HF_API_KEY.trim()}`,
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
-          messages: [
-            { role: 'user', content: text }
-          ]
+          model: 'Qwen/Qwen2.5-72B-Instruct',
+          messages: apiMessages,
+          max_tokens: 500,
         }),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || `Ошибка сервера: ${response.status}`);
+      }
       
       const data = await response.json();
+      console.log("Ответ напрямую от HF:", data);
       
-      // 1. Добавь этот console.log, чтобы увидеть реальный ответ в консоли браузера:
-      console.log("Ответ от Netlify Function:", data);
-      
-      // 2. Сделай безопасную проверку структуры перед выводом:
+      // 5. Безопасно проверяем и выводим ответ
       if (data && data.choices && data.choices[0] && data.choices[0].message) {
         const replyText = data.choices[0].message.content;
         setMessages((prev) => [
           ...prev,
           { id: Date.now().toString(), text: replyText, sender: 'bot' },
         ]);
-      } else if (data.error) {
-        // Если сервер вернул ошибку, выводим её для отладки
-        console.error("Ошибка от API:", data.error);
-        setMessages((prev) => [
-          ...prev,
-          { id: Date.now().toString(), text: `Ошибка: ${JSON.stringify(data.error)}`, sender: 'bot' },
-        ]);
       } else {
         setMessages((prev) => [
           ...prev,
-          { id: Date.now().toString(), text: 'Странный формат ответа от сервера.', sender: 'bot' },
+          { id: Date.now().toString(), text: 'Странный формат ответа от ИИ.', sender: 'bot' },
         ]);
       }
-    } catch (error) {
-      console.error('Ошибка связи с QC1:', error);
+    } catch (error: any) {
+      console.error('Ошибка связи с QC1 напрямую:', error);
       setMessages((prev) => [
         ...prev,
         {
           id: Date.now().toString(),
-          text: 'Ой, связь прервалась. Попробуй еще раз, брат.',
+          text: `Ошибка связи: ${error.message || 'попробуй еще раз, брат.'}`,
           sender: 'bot',
         },
       ]);
