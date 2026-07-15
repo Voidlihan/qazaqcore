@@ -1,3 +1,5 @@
+import axios from 'axios';
+
 export const handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
@@ -28,39 +30,34 @@ export const handler = async (event) => {
       ...messages
     ];
 
-    // Стандартный OpenAI-совместимый адрес Hugging Face
-    const response = await fetch('https://api-inference.huggingface.co/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey.trim()}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'Qwen/Qwen2.5-72B-Instruct', 
+    // Делаем запрос через надежный axios
+    const response = await axios.post(
+      'https://api-inference.huggingface.co/v1/chat/completions',
+      {
+        model: 'Qwen/Qwen2.5-72B-Instruct',
         messages: fullMessages,
         max_tokens: 500,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      return {
-        statusCode: response.status,
-        body: JSON.stringify({ error: `Hugging Face API error: ${errorText}` }),
-      };
-    }
-
-    const data = await response.json();
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${apiKey.trim()}`,
+          'Content-Type': 'application/json',
+        },
+        timeout: 15000 // таймаут 15 секунд, чтобы запрос не висел вечно
+      }
+    );
 
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+      body: JSON.stringify(response.data),
     };
   } catch (error) {
+    // Вытаскиваем детальную ошибку из axios, если она есть
+    const errorResponse = error.response ? JSON.stringify(error.response.data) : error.message;
     return {
-      statusCode: 500,
-      body: JSON.stringify({ error: error.message }),
+      statusCode: error.response ? error.response.status : 500,
+      body: JSON.stringify({ error: `Axios fetch failed: ${errorResponse}` }),
     };
   }
 };
