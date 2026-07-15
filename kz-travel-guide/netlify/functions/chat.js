@@ -32,7 +32,7 @@ export const handler = async (event) => {
 
     // Делаем запрос через надежный axios
     const response = await axios.post(
-      'https://api-inference.huggingface.co/v1/chat/completions',
+      'https://router.huggingface.co/v1/chat/completions',
       {
         model: 'Qwen/Qwen2.5-72B-Instruct',
         messages: fullMessages,
