@@ -7,7 +7,7 @@ export const handler = async (event) => {
 
   try {
     const { messages } = JSON.parse(event.body);
-    const apiKey = process.env.HF_API_KEY;
+    const apiKey = process.env.VITE_HF_API_KEY;
 
     if (!apiKey) {
       return {
