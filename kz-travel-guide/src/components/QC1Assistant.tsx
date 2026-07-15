@@ -7,7 +7,6 @@ interface Message {
   sender: 'bot' | 'user';
 }
 
-// Вставь сюда свой сгенерированный токен Hugging Face (начинается на hf_...)
 const HF_API_KEY = import.meta.env.VITE_HF_API_KEY || "";
 
 export const QC1Assistant: React.FC = () => {
