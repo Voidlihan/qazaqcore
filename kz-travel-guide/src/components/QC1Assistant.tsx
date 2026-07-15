@@ -66,7 +66,7 @@ export const QC1Assistant: React.FC = () => {
       ];
 
       // 4. Запрос напрямую к Hugging Face (без использования Netlify Functions и DNS-проблем на бэкенде)
-      const response = await fetch('https://api-inference.huggingface.co/v1/chat/completions', {
+      const response = await fetch('https://router.huggingface.co/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${HF_API_KEY.trim()}`,
