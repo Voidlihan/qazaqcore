@@ -46,11 +46,18 @@ export const QC1Assistant: React.FC = () => {
       // Запрос к нашей Netlify Function (или Next.js API route)
       const response = await fetch('/.netlify/functions/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: [
+            { role: 'user', content: 'Привет! Расскажи о проекте Qazaq Core.' }
+          ]
+        }),
       });
-
+      
       const data = await response.json();
+      console.log(data.choices[0].message.content);
 
       setMessages((prev) => [
         ...prev,
