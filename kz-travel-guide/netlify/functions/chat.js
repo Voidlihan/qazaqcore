@@ -14,7 +14,6 @@ export const handler = async (event) => {
       };
     }
 
-    // Системный промпт (база знаний)
     const systemPrompt = `
       You are QC1, an AI assistant for the Qazaq Core project (interactive guide to Astana).
       Creator: Alihan, developer and content creator.
@@ -29,16 +28,15 @@ export const handler = async (event) => {
       ...messages
     ];
 
-    // Используем выделенный отказоустойчивый роутер Hugging Face
-    const response = await fetch('https://router.huggingface.co/v1/chat/completions', {
+    // Стандартный OpenAI-совместимый адрес Hugging Face
+    const response = await fetch('https://api-inference.huggingface.co/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey.trim()}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        // Добавляем флаг :auto, чтобы система сама выбрала живой сервер для Qwen
-        model: 'Qwen/Qwen2.5-72B-Instruct:auto', 
+        model: 'Qwen/Qwen2.5-72B-Instruct', 
         messages: fullMessages,
         max_tokens: 500,
       }),
