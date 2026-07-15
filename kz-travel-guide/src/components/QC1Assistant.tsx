@@ -46,62 +46,61 @@ export const QC1Assistant: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // 2. Системные инструкции (личность бота)
-      const systemPrompt = `
-        You are QC1, an AI assistant for the Qazaq Core project (interactive guide to Astana).
-        Creator: Alihan, developer and content creator.
-        Tone: Friendly, helpful, brief, and polite.
-        Instructions:
-        1. Detect the user's language and respond in the same language (Kazakh, English, or Russian).
-        2. If asked about places in Astana, suggest: Baiterek, Hazret Sultan Mosque, or Khan Shatyr.
-      `;
-
-      // 3. Формируем историю диалога для ИИ из текущих сообщений в стейте
-      const apiMessages = [
-        { role: 'system', content: systemPrompt },
-        ...updatedMessages.map(msg => ({
-          role: msg.sender === 'user' ? 'user' : 'assistant',
-          content: msg.text
-        }))
-      ];
-
-      console.log("Отправляем токен:", HF_API_KEY ? "Токен есть (начинается на " + HF_API_KEY.slice(0, 5) + ")" : "Токена НЕТ!");
-      // 4. Запрос напрямую к Hugging Face (без использования Netlify Functions и DNS-проблем на бэкенде)
-      const response = await fetch('https://router.huggingface.co/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${HF_API_KEY.trim()}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'Qwen/Qwen2.5-72B-Instruct',
-          messages: apiMessages,
-          max_tokens: 500,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || `Ошибка сервера: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      console.log("Ответ напрямую от HF:", data);
-      
-      // 5. Безопасно проверяем и выводим ответ
-      if (data && data.choices && data.choices[0] && data.choices[0].message) {
-        const replyText = data.choices[0].message.content;
-        setMessages((prev) => [
-          ...prev,
-          { id: Date.now().toString(), text: replyText, sender: 'bot' },
-        ]);
-      } else {
-        setMessages((prev) => [
-          ...prev,
-          { id: Date.now().toString(), text: 'Странный формат ответа от ИИ.', sender: 'bot' },
-        ]);
-      }
-    } catch (error: any) {
+        const systemPrompt = `
+          You are QC1, an AI assistant for the Qazaq Core project (interactive guide to Astana).
+          Creator: Alihan, developer and content creator.
+          Tone: Friendly, helpful, brief, and polite.
+          Instructions:
+          1. Detect the user's language and respond in the same language (Kazakh, English, or Russian).
+          2. If asked about places in Astana, suggest: Baiterek, Hazret Sultan Mosque, or Khan Shatyr.
+        `;
+  
+        const apiMessages = [
+          { role: 'system', content: systemPrompt },
+          ...updatedMessages.map(msg => ({
+            role: msg.sender === 'user' ? 'user' : 'assistant',
+            content: msg.text
+          }))
+        ];
+  
+        console.log("Отправляем токен:", HF_API_KEY ? "Токен есть (начинается на " + HF_API_KEY.slice(0, 5) + ")" : "Токена НЕТ!");
+  
+        // Стучимся на оригинальный прямой адрес
+        const response = await fetch('https://api-inference.huggingface.co/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${HF_API_KEY.trim()}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'Qwen/Qwen2.5-72B-Instruct',
+            messages: apiMessages,
+            max_tokens: 500,
+          }),
+        });
+  
+        if (!response.ok) {
+          // Вытягиваем детальный текст ошибки от Hugging Face
+          const errorText = await response.text();
+          throw new Error(`Код ${response.status}: ${errorText}`);
+        }
+        
+        const data = await response.json();
+        console.log("Ответ напрямую от HF:", data);
+        
+        if (data && data.choices && data.choices[0] && data.choices[0].message) {
+          const replyText = data.choices[0].message.content;
+          setMessages((prev) => [
+            ...prev,
+            { id: Date.now().toString(), text: replyText, sender: 'bot' },
+          ]);
+        } else {
+          setMessages((prev) => [
+            ...prev,
+            { id: Date.now().toString(), text: 'Странный формат ответа от ИИ.', sender: 'bot' },
+          ]);
+        }
+      } catch (error: any) {
       console.error('Ошибка связи с QC1 напрямую:', error);
       setMessages((prev) => [
         ...prev,
