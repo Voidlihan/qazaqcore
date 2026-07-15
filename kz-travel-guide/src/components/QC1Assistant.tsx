@@ -65,6 +65,7 @@ export const QC1Assistant: React.FC = () => {
         }))
       ];
 
+      console.log("Отправляем токен:", HF_API_KEY ? "Токен есть (начинается на " + HF_API_KEY.slice(0, 5) + ")" : "Токена НЕТ!");
       // 4. Запрос напрямую к Hugging Face (без использования Netlify Functions и DNS-проблем на бэкенде)
       const response = await fetch('https://router.huggingface.co/v1/chat/completions', {
         method: 'POST',
