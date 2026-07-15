@@ -46,23 +46,39 @@ export const QC1Assistant: React.FC = () => {
       // Запрос к нашей Netlify Function (или Next.js API route)
       const response = await fetch('/.netlify/functions/chat', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: [
-            { role: 'user', content: 'Привет! Расскажи о проекте Qazaq Core.' }
+            { role: 'user', content: text }
           ]
         }),
       });
       
       const data = await response.json();
-      console.log(data.choices[0].message.content);
-
-      setMessages((prev) => [
-        ...prev,
-        { id: Date.now().toString(), text: data.reply, sender: 'bot' },
-      ]);
+      
+      // 1. Добавь этот console.log, чтобы увидеть реальный ответ в консоли браузера:
+      console.log("Ответ от Netlify Function:", data);
+      
+      // 2. Сделай безопасную проверку структуры перед выводом:
+      if (data && data.choices && data.choices[0] && data.choices[0].message) {
+        const replyText = data.choices[0].message.content;
+        setMessages((prev) => [
+          ...prev,
+          { id: Date.now().toString(), text: replyText, sender: 'bot' },
+        ]);
+      } else if (data.error) {
+        // Если сервер вернул ошибку, выводим её для отладки
+        console.error("Ошибка от API:", data.error);
+        setMessages((prev) => [
+          ...prev,
+          { id: Date.now().toString(), text: `Ошибка: ${JSON.stringify(data.error)}`, sender: 'bot' },
+        ]);
+      } else {
+        setMessages((prev) => [
+          ...prev,
+          { id: Date.now().toString(), text: 'Странный формат ответа от сервера.', sender: 'bot' },
+        ]);
+      }
     } catch (error) {
       console.error('Ошибка связи с QC1:', error);
       setMessages((prev) => [
